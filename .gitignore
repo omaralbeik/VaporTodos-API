@@ -47,3 +47,7 @@ Packages
 xcuserdata
 *.xcodeproj
 DerivedData/
+
+## Databases
+*.db
+*.sqlite3
