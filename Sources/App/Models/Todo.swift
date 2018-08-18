@@ -10,7 +10,7 @@ import Foundation
 import FluentSQLite
 import Vapor
 
-final class Todo: Content, Parameter {
+final class Todo {
 
 	/// The unique identifier for this `Todo`.
 	var id: Int?
@@ -18,7 +18,7 @@ final class Todo: Content, Parameter {
 	/// A title describing what this `Todo` entails.
 	var title: String
 
-	/// Reference to user that owns this TODO.
+	/// Reference to user that owns this todo.
 	var userId: User.ID
 
 	init(id: Int? = nil, title: String, userId: User.ID) {
@@ -28,6 +28,8 @@ final class Todo: Content, Parameter {
 	}
 }
 
+extension Todo: Content {}
+extension Todo: Parameter {}
 extension Todo: SQLiteModel {}
 
 extension Todo {
@@ -43,4 +45,42 @@ extension Todo: Migration {
 			builder.reference(from: \.userId, to: \User.id)
 		}
 	}
+}
+
+extension Todo {
+
+	struct CreateRequest: Content {
+		var title: String
+	}
+
+}
+
+extension Todo {
+
+	final class Public: Content {
+		var id: Int?
+		var title: String
+
+		init(id: Int?, title: String) {
+			self.id = id
+			self.title = title
+		}
+	}
+
+}
+
+extension Todo {
+
+	var `public`: Public {
+		return Todo.Public(id: id, title: title)
+	}
+
+}
+
+extension Future where T: Todo {
+
+	var `public`: Future<Todo.Public> {
+		return map(to: Todo.Public.self) { return $0.public }
+	}
+
 }

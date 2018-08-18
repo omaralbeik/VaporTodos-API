@@ -27,7 +27,7 @@ struct TodoController: RouteCollection {
 
 }
 
-//MARK: Handlers
+// MARK: - Handlers
 private extension TodoController {
 
 	func getHandler(_ request: Request) throws -> Future<Todo.Public> {

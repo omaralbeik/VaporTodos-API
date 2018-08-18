@@ -18,16 +18,15 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	// Configure the authentication provider
 	try services.register(AuthenticationProvider())
 
-
     var middlewares = MiddlewareConfig()
 	middlewares.use(FileMiddleware.self)
     middlewares.use(ErrorMiddleware.self)
     services.register(middlewares)
 
-
 	// Configure database
 	var databaseConfig = DatabasesConfig()
-	let databasePath = "\(directoryConfig.workDir)todo.db"
+	let databaseName = "todos.db"
+	let databasePath = directoryConfig.workDir + databaseName
 	let database = try SQLiteDatabase(storage: .file(path: databasePath))
 	databaseConfig.add(database: database, as: .sqlite)
 	services.register(databaseConfig)
@@ -42,4 +41,5 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	var commandConfig = CommandConfig.default()
 	commandConfig.useFluentCommands()
 	services.register(commandConfig)
+
 }
