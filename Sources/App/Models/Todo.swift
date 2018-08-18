@@ -1,10 +1,3 @@
-//
-//  Todo.swift
-//  App
-//
-//  Created by Omar Albeik on 8/18/18.
-//
-
 import Foundation
 
 import FluentSQLite

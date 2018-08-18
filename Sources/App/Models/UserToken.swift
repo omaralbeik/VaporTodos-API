@@ -1,10 +1,3 @@
-//
-//  UserToken.swift
-//  App
-//
-//  Created by Omar Albeik on 8/18/18.
-//
-
 import Authentication
 import Crypto
 import FluentSQLite
