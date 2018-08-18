@@ -41,5 +41,4 @@ public func configure(_ config: inout Config, _ env: inout Environment, _ servic
 	var commandConfig = CommandConfig.default()
 	commandConfig.useFluentCommands()
 	services.register(commandConfig)
-
 }

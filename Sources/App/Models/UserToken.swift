@@ -60,7 +60,6 @@ extension UserToken: Migration {
 }
 
 extension UserToken {
-
 	final class Public: Content {
 		var token: String
 		var expiresAt: Date?
@@ -72,21 +71,16 @@ extension UserToken {
 			self.userId = userId
 		}
 	}
-
 }
 
 extension UserToken {
-
 	var `public`: Public {
 		return UserToken.Public(token: token, expiresAt: expiresAt, userId: userId)
 	}
-
 }
 
 extension Future where T: UserToken {
-
 	var `public`: Future<UserToken.Public> {
 		return map(to: UserToken.Public.self) { return $0.public }
 	}
-
 }

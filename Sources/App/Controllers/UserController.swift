@@ -3,7 +3,6 @@ import FluentSQLite
 import Crypto
 
 struct UserController: RouteCollection {
-
 	func boot(router: Router) throws {
 		let usersRoute = router.grouped("api", "users")
 		usersRoute.post(User.self, at: "register", use: registerHandler)
@@ -17,12 +16,10 @@ struct UserController: RouteCollection {
 		let tokenAuthGroup = usersRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
 		tokenAuthGroup.get(use: getAllHandler)
 	}
-
 }
 
 // MARK: - Handlers
 private extension UserController {
-
 	func loginHandler(_ request: Request) throws -> Future<UserToken.Public> {
 		let user = try request.requireAuthenticated(User.self)
 		let token = try UserToken.create(userId: user.requireID())
@@ -47,5 +44,4 @@ private extension UserController {
 		user.password = hashedPassword
 		return user.save(on: request).public
 	}
-
 }

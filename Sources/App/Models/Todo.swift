@@ -3,7 +3,7 @@ import Foundation
 import FluentSQLite
 import Vapor
 
-final class Todo {
+final class Todo: Content, Parameter, SQLiteModel {
 
 	/// The unique identifier for this `Todo`.
 	var id: Int?
@@ -20,10 +20,6 @@ final class Todo {
 		self.userId = userId
 	}
 }
-
-extension Todo: Content {}
-extension Todo: Parameter {}
-extension Todo: SQLiteModel {}
 
 extension Todo {
 	var user: Parent<Todo, User> {

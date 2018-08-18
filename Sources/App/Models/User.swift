@@ -2,7 +2,7 @@ import FluentSQLite
 import Authentication
 import Vapor
 
-final class User {
+final class User: Content, Parameter, SQLiteUUIDModel {
 
 	/// User's unique identifier.
 	var id: UUID?
@@ -30,27 +30,20 @@ extension User: BasicAuthenticatable {
 	static var passwordKey: WritableKeyPath<User, String> = \.password
 }
 
-extension User: Content {}
-extension User: Parameter {}
-extension User: SQLiteUUIDModel {}
-
 extension User: TokenAuthenticatable {
 	typealias TokenType = UserToken
 }
 
 extension User: Migration {
-
 	static func prepare(on connection: SQLiteConnection) -> Future<Void> {
 		return SQLiteDatabase.create(User.self, on: connection) { builder in
 			try addProperties(to: builder)
 			builder.unique(on: \.email)
 		}
 	}
-
 }
 
 extension User {
-
 	final class Public: Content {
 		var name: String
 		var email: String
@@ -60,21 +53,16 @@ extension User {
 			self.email = email
 		}
 	}
-
 }
 
 extension User {
-
 	var `public`: Public {
 		return User.Public(name: name, email: email)
 	}
-
 }
 
 extension Future where T: User {
-
 	var `public`: Future<User.Public> {
 		return map(to: User.Public.self) { return $0.public }
 	}
-
 }

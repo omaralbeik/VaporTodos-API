@@ -3,7 +3,6 @@ import FluentSQLite
 import Crypto
 
 struct TodoController: RouteCollection {
-
 	func boot(router: Router) throws {
 		let todosRoute = router.grouped("api", "todos")
 
@@ -17,12 +16,10 @@ struct TodoController: RouteCollection {
 		tokenAuthGroup.delete(Todo.parameter, use: deleteHandler)
 		tokenAuthGroup.put(Todo.parameter, use: updateHandler)
 	}
-
 }
 
 // MARK: - Handlers
 private extension TodoController {
-
 	func getHandler(_ request: Request) throws -> Future<Todo.Public> {
 		let user = try request.requireAuthenticated(User.self)
 		return try request.parameters.next(Todo.self).map { todo in
@@ -62,5 +59,4 @@ private extension TodoController {
 			return todo.delete(on: request)
 		}.transform(to: .ok)
 	}
-
 }
