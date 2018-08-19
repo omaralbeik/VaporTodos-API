@@ -41,13 +41,16 @@ private extension TodoController {
 	func createHandler(_ req: Request) throws -> Future<Todo.Public> {
 		let user = try req.requireAuthenticated(User.self)
 		return try req.content.decode(Todo.CreateRequest.self).flatMap { todo in
-			return try Todo(title: todo.title, userId: user.requireID()).save(on: req).public
+			let todo = try Todo(title: todo.title, userId: user.requireID())
+			try todo.validate()
+			return todo.save(on: req).public
 		}
 	}
 
 	func updateHandler(_ req: Request) throws -> Future<Todo.Public> {
 		return try flatMap(to: Todo.Public.self, req.parameters.next(Todo.self), req.content.decode(Todo.CreateRequest.self)) { todo, updateData in
 			todo.title = updateData.title
+			try todo.validate()
 			return todo.save(on: req).public
 		}
 	}

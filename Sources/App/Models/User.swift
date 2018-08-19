@@ -38,6 +38,17 @@ extension User: TokenAuthenticatable {
 
 }
 
+extension User: Validatable {
+
+	static func validations() throws -> Validations<User> {
+		var validations = Validations(User.self)
+		try validations.add(\.email, .email)
+		try validations.add(\.password, .count(6...) && .alphanumeric)
+		return validations
+	}
+
+}
+
 extension User: Migration {
 
 	static func prepare(on connection: SQLiteConnection) -> Future<Void> {

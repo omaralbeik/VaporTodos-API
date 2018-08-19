@@ -30,6 +30,16 @@ extension Todo {
 
 }
 
+extension Todo: Validatable {
+
+	static func validations() throws -> Validations<Todo> {
+		var validations = Validations(Todo.self)
+		try validations.add(\.title, .count(1...))
+		return validations
+	}
+
+}
+
 extension Todo: Migration {
 
 	static func prepare(on connection: SQLiteConnection) -> Future<Void> {

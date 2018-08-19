@@ -6,10 +6,12 @@ struct UserController: RouteCollection {
 
 	func boot(router: Router) throws {
 		let usersRoute = router.grouped("api", "users")
-		usersRoute.post(User.self, at: "register", use: registerHandler)
+
+		let authRoute = router.grouped("api", "auth")
+		authRoute.post(User.self, at: "register", use: registerHandler)
 
 		let basicAuthMiddleware = User.basicAuthMiddleware(using: BCryptDigest())
-		let basicAuthGroup = usersRoute.grouped(basicAuthMiddleware)
+		let basicAuthGroup = authRoute.grouped(basicAuthMiddleware)
 		basicAuthGroup.post("login", use: loginHandler)
 
 		let tokenAuthMiddleware = User.tokenAuthMiddleware()
@@ -42,6 +44,7 @@ private extension UserController {
 	}
 
 	func registerHandler(_ req: Request, user: User) throws -> Future<User.Public> {
+		try user.validate()
 		let digest = try req.make(BCryptDigest.self)
 		let hashedPassword = try digest.hash(user.password)
 		user.password = hashedPassword
