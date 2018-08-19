@@ -21,8 +21,8 @@ final class Token: Content, Parameter {
 		self.id = id
 		self.token = token
 
-		// set token to expire after 1 day
-		self.expiresAt = Date.init(timeInterval: 60 * 60 * 24, since: .init())
+		// set token to expire after 5 hours
+		self.expiresAt = Date.init(timeInterval: 60 * 60 * 5, since: .init())
 
 		self.userId = userId
 	}
