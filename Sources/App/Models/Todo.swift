@@ -19,21 +19,26 @@ final class Todo: Content, Parameter, SQLiteModel {
 		self.title = title
 		self.userId = userId
 	}
+
 }
 
 extension Todo {
+
 	var user: Parent<Todo, User> {
 		return parent(\.userId)
 	}
+
 }
 
 extension Todo: Migration {
+
 	static func prepare(on connection: SQLiteConnection) -> Future<Void> {
 		return SQLiteDatabase.create(Todo.self, on: connection) { builder in
 			try addProperties(to: builder)
 			builder.reference(from: \.userId, to: \User.id)
 		}
 	}
+
 }
 
 extension Todo {
@@ -44,32 +49,16 @@ extension Todo {
 
 }
 
-extension Todo {
+extension Todo: PublicType {
 
-	final class Public: Content {
+	struct Public: Content {
 		var id: Int?
 		var title: String
-
-		init(id: Int?, title: String) {
-			self.id = id
-			self.title = title
-		}
 	}
 
-}
-
-extension Todo {
-
-	var `public`: Public {
-		return Todo.Public(id: id, title: title)
-	}
-
-}
-
-extension Future where T: Todo {
-
-	var `public`: Future<Todo.Public> {
-		return map(to: Todo.Public.self) { return $0.public }
+	typealias P = Todo.Public
+	var `public`: P {
+		return P(id: id, title: title)
 	}
 
 }

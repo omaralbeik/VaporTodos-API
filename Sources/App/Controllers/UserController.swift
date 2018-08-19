@@ -3,6 +3,7 @@ import FluentSQLite
 import Crypto
 
 struct UserController: RouteCollection {
+
 	func boot(router: Router) throws {
 		let usersRoute = router.grouped("api", "users")
 		usersRoute.post(User.self, at: "register", use: registerHandler)
@@ -16,32 +17,35 @@ struct UserController: RouteCollection {
 		let tokenAuthGroup = usersRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
 		tokenAuthGroup.get(use: getAllHandler)
 	}
+
 }
 
 // MARK: - Handlers
 private extension UserController {
-	func loginHandler(_ request: Request) throws -> Future<UserToken.Public> {
-		let user = try request.requireAuthenticated(User.self)
-		let token = try UserToken.create(userId: user.requireID())
-		return token.save(on: request).public
+
+	func loginHandler(_ req: Request) throws -> Future<Token.Public> {
+		let user = try req.requireAuthenticated(User.self)
+		let token = try Token.create(userId: user.requireID())
+		return token.save(on: req).public
 	}
 
-	func updateHandler(_ request: Request) throws -> Future<User.Public> {
-		return try flatMap(to: User.Public.self, request.parameters.next(User.self), request.content.decode(User.self)) { user, updateUser in
+	func updateHandler(_ req: Request) throws -> Future<User.Public> {
+		return try flatMap(to: User.Public.self, req.parameters.next(User.self), req.content.decode(User.self)) { user, updateUser in
 			user.email = updateUser.email
 			user.name = updateUser.name
-			return user.save(on: request).public
+			return user.save(on: req).public
 		}
 	}
 
-	func getAllHandler(_ request: Request) throws -> Future<[User.Public]> {
-		return User.query(on: request).decode(data: User.Public.self).all()
+	func getAllHandler(_ req: Request) throws -> Future<[User.Public]> {
+		return User.query(on: req).decode(data: User.Public.self).all()
 	}
 
-	func registerHandler(_ request: Request, user: User) throws -> Future<User.Public> {
-		let digest = try request.make(BCryptDigest.self)
+	func registerHandler(_ req: Request, user: User) throws -> Future<User.Public> {
+		let digest = try req.make(BCryptDigest.self)
 		let hashedPassword = try digest.hash(user.password)
 		user.password = hashedPassword
-		return user.save(on: request).public
+		return user.save(on: req).public
 	}
+	
 }

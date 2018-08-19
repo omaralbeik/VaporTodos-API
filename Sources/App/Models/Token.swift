@@ -3,11 +3,18 @@ import Crypto
 import FluentSQLite
 import Vapor
 
-final class UserToken: Content, Parameter {
+final class Token: Content, Parameter {
+
+	/// Token's unique identifier.
 	var id: Int?
+
+	/// Unique token string.
 	var token: String
+
+	/// Expiration date. Token will no longer be valid after this point.
 	var expiresAt: Date?
 
+	/// Reference to user that owns this token.
 	var userId: User.ID
 
 	init(id: Int? = nil, token: String, userId: User.ID) {
@@ -19,68 +26,66 @@ final class UserToken: Content, Parameter {
 
 		self.userId = userId
 	}
+
 }
 
-extension UserToken: SQLiteModel {
+extension Token: SQLiteModel {
+
 	static var deletedAtKey: TimestampKey? {
 		return \.expiresAt
 	}
+
 }
 
-extension UserToken {
-	static func create(userId: User.ID) throws -> UserToken {
+extension Token {
+
+	static func create(userId: User.ID) throws -> Token {
 		let token = try CryptoRandom().generateData(count: 64).base64EncodedString()
 		return .init(token: token, userId: userId)
 	}
 
-	var user: Parent<UserToken, User> {
+	var user: Parent<Token, User> {
 		return parent(\.userId)
 	}
+
 }
 
-extension UserToken: Token {
+extension Token: Authentication.Token {
+
 	typealias UserType = User
 
-	static var tokenKey: WritableKeyPath<UserToken, String> {
+	static var tokenKey: WritableKeyPath<Token, String> {
 		return \.token
 	}
 
-	static var userIDKey: WritableKeyPath<UserToken, User.ID> {
+	static var userIDKey: WritableKeyPath<Token, User.ID> {
 		return \.userId
 	}
+
 }
 
-extension UserToken: Migration {
+extension Token: Migration {
+
 	static func prepare(on conn: SQLiteConnection) -> Future<Void> {
-		return SQLiteDatabase.create(UserToken.self, on: conn) { builder in
+		return SQLiteDatabase.create(Token.self, on: conn) { builder in
 			try addProperties(to: builder)
 			builder.reference(from: \.userId, to: \User.id)
 		}
 	}
+
 }
 
-extension UserToken {
-	final class Public: Content {
+extension Token: PublicType {
+
+	struct Public: Content {
 		var token: String
 		var expiresAt: Date?
 		var userId: User.ID
-
-		init(token: String, expiresAt: Date?, userId: User.ID) {
-			self.token = token
-			self.expiresAt = expiresAt
-			self.userId = userId
-		}
 	}
-}
 
-extension UserToken {
-	var `public`: Public {
-		return UserToken.Public(token: token, expiresAt: expiresAt, userId: userId)
+	typealias P = Public
+	var `public`: P {
+		return P(token: token, expiresAt: expiresAt, userId: userId)
 	}
-}
 
-extension Future where T: UserToken {
-	var `public`: Future<UserToken.Public> {
-		return map(to: UserToken.Public.self) { return $0.public }
-	}
 }
