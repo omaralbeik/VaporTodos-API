@@ -8,7 +8,7 @@ final class User: Content, Parameter, SQLiteUUIDModel {
 	var id: UUID?
 
 	/// User's full name.
-	var name: String
+	var name: String?
 
 	/// User's email address.
 	var email: String
@@ -16,7 +16,7 @@ final class User: Content, Parameter, SQLiteUUIDModel {
 	/// BCrypt hash of the user's password.
 	var password: String
 
-	init(id: UUID? = nil, name: String, email: String, password: String) {
+	init(id: UUID? = nil, name: String?, email: String, password: String) {
 		self.id = id
 		self.name = name
 		self.email = email
@@ -87,7 +87,7 @@ extension User {
 extension User: PublicType {
 
 	struct Public: Content {
-		var name: String
+		var name: String?
 		var email: String
 	}
 
