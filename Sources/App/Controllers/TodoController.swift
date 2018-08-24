@@ -11,10 +11,18 @@ struct TodoController: RouteCollection {
 		let guardAuthMiddleware = User.guardAuthMiddleware()
 		let tokenAuthGroup = todosRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
 
+		// Create
 		tokenAuthGroup.post(use: createHandler)
+
+		// Read
 		tokenAuthGroup.get(Todo.parameter, use: getHandler)
 		tokenAuthGroup.get(use: getAllHandler)
+		tokenAuthGroup.get("search", use: searchHandler)
+
+		// Update
 		tokenAuthGroup.put(Todo.parameter, use: updateHandler)
+
+		// Delete
 		tokenAuthGroup.delete(Todo.parameter, use: deleteHandler)
 	}
 
@@ -25,8 +33,8 @@ private extension TodoController {
 
 	func getHandler(_ req: Request) throws -> Future<Todo.Public> {
 		let user = try req.requireAuthenticated(User.self)
-		guard let todoId = req.parameters.values.compactMap({ Int($0.value) }).first else {
-			throw Abort(.badRequest)
+		guard let todoId = req.parameters.values.first.flatMap({ Int($0.value) }) else {
+			throw Abort(.badRequest, reason: "Invalid todo id format")
 		}
 
 		return try user.children.query(on: req).filter(\.id == todoId).first().map(to: Todo.self) { possibleTodo in
@@ -40,6 +48,17 @@ private extension TodoController {
 	func getAllHandler(_ req: Request) throws -> Future<[Todo.Public]> {
 		let user = try req.requireAuthenticated(User.self)
 		return try user.children.query(on: req).all().map(to: [Todo.Public].self) { todos in
+			return todos.map { $0.public }
+		}
+	}
+
+	func searchHandler(_ req: Request) throws -> Future<[Todo.Public]> {
+		let user = try req.requireAuthenticated(User.self)
+		guard let query = req.query[String.self, at: "title"] else {
+				throw Abort(.badRequest, reason: "Missing 'title' key in query")
+		}
+
+		return try user.children.query(on: req).filter(\.title, .like, "%\(query)%").all().map(to: [Todo.Public].self) { todos in
 			return todos.map { $0.public }
 		}
 	}
