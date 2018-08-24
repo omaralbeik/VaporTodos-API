@@ -5,7 +5,7 @@ import Crypto
 struct TodoController: RouteCollection {
 
 	func boot(router: Router) throws {
-		let todosRoute = router.grouped("todos")
+		let todosRoute = router.grouped(Path.todos)
 
 		let tokenAuthMiddleware = User.tokenAuthMiddleware()
 		let guardAuthMiddleware = User.guardAuthMiddleware()
@@ -17,7 +17,7 @@ struct TodoController: RouteCollection {
 		// Read
 		tokenAuthGroup.get(Todo.parameter, use: getHandler)
 		tokenAuthGroup.get(use: getAllHandler)
-		tokenAuthGroup.get("search", use: searchHandler)
+		tokenAuthGroup.get(Path.search, use: searchHandler)
 
 		// Update
 		tokenAuthGroup.put(Todo.parameter, use: updateHandler)
@@ -31,10 +31,19 @@ struct TodoController: RouteCollection {
 // MARK: - Handlers
 private extension TodoController {
 
+	func createHandler(_ req: Request) throws -> Future<Todo.Public> {
+		let user = try req.requireAuthenticated(User.self)
+		return try req.content.decode(Todo.CreateRequest.self).flatMap { todo in
+			let todo = try Todo(title: todo.title, isDone: false, userId: user.requireID())
+			try todo.validate()
+			return todo.save(on: req).public
+		}
+	}
+
 	func getHandler(_ req: Request) throws -> Future<Todo.Public> {
 		let user = try req.requireAuthenticated(User.self)
 		guard let todoId = req.parameters.values.first.flatMap({ Int($0.value) }) else {
-			throw Abort(.badRequest, reason: "Invalid todo id format")
+			throw Abort(.badRequest)
 		}
 
 		return try user.children.query(on: req).filter(\.id == todoId).first().map(to: Todo.self) { possibleTodo in
@@ -47,34 +56,26 @@ private extension TodoController {
 
 	func getAllHandler(_ req: Request) throws -> Future<[Todo.Public]> {
 		let user = try req.requireAuthenticated(User.self)
-		return try user.children.query(on: req).all().map(to: [Todo.Public].self) { todos in
-			return todos.map { $0.public }
-		}
+		return try user.children.query(on: req).sort(\.dateCreated, .descending).decode(data: Todo.Public.self).all()
 	}
 
 	func searchHandler(_ req: Request) throws -> Future<[Todo.Public]> {
 		let user = try req.requireAuthenticated(User.self)
 		guard let query = req.query[String.self, at: "title"] else {
-				throw Abort(.badRequest, reason: "Missing 'title' key in query")
+				throw Abort(.badRequest)
 		}
 
-		return try user.children.query(on: req).filter(\.title, .like, "%\(query)%").all().map(to: [Todo.Public].self) { todos in
-			return todos.map { $0.public }
-		}
-	}
-
-	func createHandler(_ req: Request) throws -> Future<Todo.Public> {
-		let user = try req.requireAuthenticated(User.self)
-		return try req.content.decode(Todo.CreateRequest.self).flatMap { todo in
-			let todo = try Todo(title: todo.title, userId: user.requireID())
-			try todo.validate()
-			return todo.save(on: req).public
-		}
+		return try user.children.query(on: req).filter(\.title, .like, "%\(query)%").decode(data: Todo.Public.self).all()
 	}
 
 	func updateHandler(_ req: Request) throws -> Future<Todo.Public> {
-		return try flatMap(to: Todo.Public.self, req.parameters.next(Todo.self), req.content.decode(Todo.CreateRequest.self)) { todo, updateData in
-			todo.title = updateData.title
+		return try flatMap(to: Todo.Public.self, req.parameters.next(Todo.self), req.content.decode(Todo.UpdateRequest.self)) { todo, updateRequest in
+			if let title = updateRequest.title {
+				todo.title = title
+			}
+			if let isDone = updateRequest.isDone {
+				todo.isDone = isDone
+			}
 			try todo.validate()
 			return todo.save(on: req).public
 		}

@@ -21,14 +21,15 @@ final class Token: Content, Parameter {
 		self.id = id
 		self.token = token
 
-		// set token to expire after 5 hours
-		self.expiresAt = Date.init(timeInterval: 60 * 60 * 5, since: .init())
+		// set token to expire after 30 days
+		self.expiresAt = Date.init(timeInterval: 60 * 60 * 24 * 30, since: .init())
 
 		self.userId = userId
 	}
 
 }
 
+// MARK: - SQLiteModel
 extension Token: SQLiteModel {
 
 	static var deletedAtKey: TimestampKey? {
@@ -37,6 +38,7 @@ extension Token: SQLiteModel {
 
 }
 
+// MARK: - Parent
 extension Token {
 
 	static func create(userId: User.ID) throws -> Token {
@@ -50,6 +52,7 @@ extension Token {
 
 }
 
+// MARK: - Authentication
 extension Token: Authentication.Token {
 
 	typealias UserType = User
@@ -64,6 +67,7 @@ extension Token: Authentication.Token {
 
 }
 
+// MARK: - Migration
 extension Token: Migration {
 
 	static func prepare(on conn: SQLiteConnection) -> Future<Void> {
@@ -75,6 +79,7 @@ extension Token: Migration {
 
 }
 
+// MARK: - PublicType
 extension Token: PublicType {
 
 	struct Public: Content {

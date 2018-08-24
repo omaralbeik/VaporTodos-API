@@ -3,7 +3,7 @@ import Authentication
 import Crypto
 
 public func routes(_ router: Router) throws {
-	let apiRouter = router.grouped("api")
+	let apiRouter = router.grouped(Path.api)
 
 	let authController = AuthController()
 	try authController.boot(router: apiRouter)

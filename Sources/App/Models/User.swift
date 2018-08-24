@@ -25,6 +25,7 @@ final class User: Content, Parameter, SQLiteUUIDModel {
 
 }
 
+// MARK: - Children
 extension User {
 
 	var children: Children<User, Todo> {
@@ -33,6 +34,7 @@ extension User {
 
 }
 
+// MARK: - BasicAuthenticatable
 extension User: BasicAuthenticatable {
 
 	static var usernameKey: WritableKeyPath<User, String> = \.email
@@ -40,23 +42,25 @@ extension User: BasicAuthenticatable {
 
 }
 
+// MARK: - TokenAuthenticatable
 extension User: TokenAuthenticatable {
 
 	typealias TokenType = Token
 
 }
 
+// MARK: - Validatable
 extension User: Validatable {
 
 	static func validations() throws -> Validations<User> {
 		var validations = Validations(User.self)
 		try validations.add(\.email, .email)
-		try validations.add(\.password, .count(6...) && .alphanumeric)
 		return validations
 	}
 
 }
 
+// MARK: - Migration
 extension User: Migration {
 
 	static func prepare(on connection: SQLiteConnection) -> Future<Void> {
@@ -68,6 +72,18 @@ extension User: Migration {
 
 }
 
+// MARK: - UpdateRequest
+extension User {
+
+	struct UpdateRequest: Content {
+		var name: String?
+		var email: String?
+		var password: String?
+	}
+
+}
+
+// MARK: - PublicType
 extension User: PublicType {
 
 	struct Public: Content {
