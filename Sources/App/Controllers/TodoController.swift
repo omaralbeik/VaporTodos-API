@@ -24,13 +24,17 @@ struct TodoController: RouteCollection {
 private extension TodoController {
 
 	func getHandler(_ req: Request) throws -> Future<Todo.Public> {
-		let userId = try req.requireAuthenticated(User.self).requireID()
-		return try req.parameters.next(Todo.self).map(to: Todo.Public.self) { todo in
-			guard todo.userId == userId else {
+		let user = try req.requireAuthenticated(User.self)
+		guard let todoId = req.parameters.values.compactMap({ Int($0.value) }).first else {
+			throw Abort(.badRequest)
+		}
+
+		return try user.children.query(on: req).filter(\.id == todoId).first().map(to: Todo.self) { possibleTodo in
+			guard let todo = possibleTodo else {
 				throw Abort(.notFound)
 			}
-			return todo.public
-		}
+			return todo
+		}.public
 	}
 
 	func getAllHandler(_ req: Request) throws -> Future<[Todo.Public]> {
