@@ -12,6 +12,7 @@ struct TodoController: RouteCollection {
 		let tokenAuthGroup = todosRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
 
 		tokenAuthGroup.post(use: createHandler)
+		tokenAuthGroup.get(Todo.parameter, use: getHandler)
 		tokenAuthGroup.get(use: getAllHandler)
 		tokenAuthGroup.put(Todo.parameter, use: updateHandler)
 		tokenAuthGroup.delete(Todo.parameter, use: deleteHandler)
@@ -22,11 +23,21 @@ struct TodoController: RouteCollection {
 // MARK: - Handlers
 private extension TodoController {
 
+	func getHandler(_ req: Request) throws -> Future<Todo.Public> {
+		let userId = try req.requireAuthenticated(User.self).requireID()
+		return try req.parameters.next(Todo.self).map(to: Todo.Public.self) { todo in
+			guard todo.userId == userId else {
+				throw Abort(.notFound)
+			}
+			return todo.public
+		}
+	}
+
 	func getAllHandler(_ req: Request) throws -> Future<[Todo.Public]> {
 		let user = try req.requireAuthenticated(User.self)
-		return try user.children.query(on: req).all().map(to: [Todo.Public].self, { todos in
+		return try user.children.query(on: req).all().map(to: [Todo.Public].self) { todos in
 			return todos.map { $0.public }
-		})
+		}
 	}
 
 	func createHandler(_ req: Request) throws -> Future<Todo.Public> {
