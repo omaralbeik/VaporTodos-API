@@ -5,17 +5,16 @@ import Crypto
 struct TodoController: RouteCollection {
 
 	func boot(router: Router) throws {
-		let todosRoute = router.grouped("api", "todos")
+		let todosRoute = router.grouped("todos")
 
 		let tokenAuthMiddleware = User.tokenAuthMiddleware()
 		let guardAuthMiddleware = User.guardAuthMiddleware()
 		let tokenAuthGroup = todosRoute.grouped(tokenAuthMiddleware, guardAuthMiddleware)
 
-		tokenAuthGroup.get(Todo.parameter, use: getHandler)
-		tokenAuthGroup.get(use: getAllHandler)
 		tokenAuthGroup.post(use: createHandler)
-		tokenAuthGroup.delete(Todo.parameter, use: deleteHandler)
+		tokenAuthGroup.get(use: getAllHandler)
 		tokenAuthGroup.put(Todo.parameter, use: updateHandler)
+		tokenAuthGroup.delete(Todo.parameter, use: deleteHandler)
 	}
 
 }
@@ -23,19 +22,11 @@ struct TodoController: RouteCollection {
 // MARK: - Handlers
 private extension TodoController {
 
-	func getHandler(_ req: Request) throws -> Future<Todo.Public> {
-		let user = try req.requireAuthenticated(User.self)
-		return try req.parameters.next(Todo.self).map { todo in
-			guard try todo.userId == user.requireID() else {
-				throw Abort(.forbidden)
-			}
-			return todo.public
-		}
-	}
-
 	func getAllHandler(_ req: Request) throws -> Future<[Todo.Public]> {
 		let user = try req.requireAuthenticated(User.self)
-		return try Todo.query(on: req).filter(\.userId == user.requireID()).decode(data: Todo.Public.self).all()
+		return try user.children.query(on: req).all().map(to: [Todo.Public].self, { todos in
+			return todos.map { $0.public }
+		})
 	}
 
 	func createHandler(_ req: Request) throws -> Future<Todo.Public> {

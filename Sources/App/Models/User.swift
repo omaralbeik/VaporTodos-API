@@ -25,6 +25,14 @@ final class User: Content, Parameter, SQLiteUUIDModel {
 
 }
 
+extension User {
+
+	var children: Children<User, Todo> {
+		return children(\.userId)
+	}
+
+}
+
 extension User: BasicAuthenticatable {
 
 	static var usernameKey: WritableKeyPath<User, String> = \.email
