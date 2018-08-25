@@ -69,7 +69,19 @@ private extension TodoController {
 	}
 
 	func updateHandler(_ req: Request) throws -> Future<Todo.Public> {
-		return try flatMap(to: Todo.Public.self, req.parameters.next(Todo.self), req.content.decode(Todo.UpdateRequest.self)) { todo, updateRequest in
+		let user = try req.requireAuthenticated(User.self)
+		guard let todoId = req.parameters.values.first.flatMap({ Int($0.value) }) else {
+			throw Abort(.badRequest)
+		}
+
+		let todo = try user.children.query(on: req).filter(\.id == todoId).first().map(to: Todo.self) { possibleTodo in
+			guard let todo = possibleTodo else {
+				throw Abort(.notFound)
+			}
+			return todo
+		}
+
+		return try flatMap(to: Todo.Public.self, todo, req.content.decode(Todo.UpdateRequest.self)) { todo, updateRequest in
 			if let title = updateRequest.title {
 				todo.title = title
 			}
@@ -83,13 +95,16 @@ private extension TodoController {
 
 	func deleteHandler(_ req: Request) throws -> Future<HTTPStatus> {
 		let user = try req.requireAuthenticated(User.self)
+		guard let todoId = req.parameters.values.first.flatMap({ Int($0.value) }) else {
+			throw Abort(.badRequest)
+		}
 
-		return try req.parameters.next(Todo.self).flatMap { todo -> Future<Void> in
-			guard try todo.userId == user.requireID() else {
-				throw Abort(.forbidden)
+		return try user.children.query(on: req).filter(\.id == todoId).first().flatMap(to: HTTPStatus.self) { possibleTodo in
+			guard let todo = possibleTodo else {
+				throw Abort(.notFound)
 			}
-			return todo.delete(on: req)
-		}.transform(to: .ok)
+			return todo.delete(on: req).transform(to: .ok)
+		}
 	}
 	
 }

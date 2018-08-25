@@ -30,7 +30,9 @@ private extension AuthController {
 	}
 
 	func loginHandler(_ req: Request) throws -> Future<Token.Public> {
-		let user = try req.requireAuthenticated(User.self)
+		guard let user = try? req.requireAuthenticated(User.self) else {
+			throw Abort(.unauthorized, reason: "Invalid email or password")
+		}
 		let token = try Token.create(userId: user.requireID())
 		return token.save(on: req).public
 	}
