@@ -2,6 +2,15 @@
 Todos API using Vapor3 and Swift4
 
 
+---
+
+This repo is a part of my full-stack Swift tutorial:
+
+- [**VaporTodos-API**](https://github.com/omaralbeik/VaporTodos-API) Vapor API (this repo)
+- [**VaporTodos-iOS**](https://github.com/omaralbeik/VaporTodos-iOS) iOS Application 
+
+---
+
 ## Getting Started
 
 ### 1. Install Vapor and Swift
